@@ -1,0 +1,60 @@
+# This project revelas insights about employees, invoices, and the pusrchases of playlists by customers at a digital media store.  
+# The following SQL was written to answer specific questions about the playlists and the sales at the digital media store. 
+
+# Which genre has the highest revenue and what is the revenue?  
+SELECT tracks.Genreid,
+genres.Name,
+ROUND(SUM(invoice_items.UnitPrice*invoice_items.Quantity),2)as 'Cost'
+FROM chinook.invoice_items
+LEFT JOIN chinook.tracks 
+    ON invoice_items.TrackID=tracks.Trackid  
+LEFT JOIN chinook.genres
+    ON tracks.GenreId=genres.GenreId
+GROUP BY tracks.Genreid 
+ORDER BY Cost desc  
+LIMIT 1 
+
+# What is the average number of tracks on a playlist?  
+WITH CountTracks AS( 
+    SELECT PlaylistId, COUNT(TrackId) AS 'TrackCount'
+    FROM chinook.playlist_track
+    GROUP BY PlaylistId
+) 
+SELECT AVG(TrackCount) AS AvgTracksPerPlaylist
+FROM CountTracks
+
+# Which employee has the highest sales? 
+SELECT employees.EmployeeID, employees.FirstName, employees.LastName,employees.Title, ROUND(SUM(invoices.Total),2) as 'TotalSales'
+FROM chinook.employees 
+    LEFT JOIN chinook.customers 
+    ON employees.EmployeeId=customers.SupportRepId 
+        LEFT JOIN chinook.invoices 
+        ON customers.CustomerId=invoices.CustomerId
+WHERE employees.Title='Sales Support Agent'
+GROUP BY employees.EmployeeID
+ORDER BY TotalSales desc
+
+# Show Customers (their full names, customer ID, and country) who are not in the US. 
+SELECT CustomerId, FirstName, LastName, Country 
+FROM chinook.customers 
+WHERE country <> 'USA'
+
+# How many Invoices were there in 2009?  
+SELECT COUNT(InvoiceId) As 'Total2009Invoices'
+FROM chinook.invoices 
+WHERE InvoiceDate like '%2009%'
+
+# What are the total sales for 2009?
+SELECT ROUND(SUM(Total),2) as 'InvoiceSales'
+FROM chinook.invoices 
+WHERE InvoiceDate like '%2009%' 
+
+# Write a query that includes the purchased track name AND artist name with each invoice line ID. 
+SELECT invoice_items.InvoiceId,tracks.Name as 'TrackName', artists.Name as 'ArtistName'
+FROM chinook.invoice_items 
+    LEFT JOIN chinook.tracks 
+    ON invoice_items.TrackId=tracks.TrackId
+        INNER JOIN chinook.albums 
+        ON tracks.AlbumId=albums.AlbumId 
+            LEFT JOIN chinook.artists 
+            ON albums.ArtistId=artists.ArtistId
